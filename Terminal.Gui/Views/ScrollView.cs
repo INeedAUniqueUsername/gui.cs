@@ -33,9 +33,8 @@ namespace Terminal.Gui {
 		int size, position;
 
 		/// <summary>
-		/// The size that this scrollbar represents
+		/// The length of the scrollbar
 		/// </summary>
-		/// <value>The size.</value>
 		public int Size {
 			get => size;
 			set {
@@ -50,9 +49,8 @@ namespace Terminal.Gui {
 		public event Action ChangedPosition;
 
 		/// <summary>
-		/// The position to show the scrollbar at.
+		/// The position that the scroll bar is scrolled at.
 		/// </summary>
-		/// <value>The position.</value>
 		public int Position {
 			get => position;
 			set {
@@ -60,19 +58,54 @@ namespace Terminal.Gui {
 				SetNeedsDisplay ();
 			}
 		}
-
+		/// <summary>
+		/// Sets the position and invokes the <see cref="ChangedPosition"/> event.
+		/// </summary>
 		void SetPosition (int newPos)
 		{
 			Position = newPos;
 			ChangedPosition?.Invoke ();
 		}
+		int GetBarLength()
+		{
+			return vertical ? Bounds.Height : Bounds.Width; //Complete length, including the buttons
+		}
+		/// <summary>
+		/// Decrements the position, automatically stopping at the start of the scrollbar. Scrolls up if vertical, left if horizontal
+		/// </summary>
+		/// <param name="spaces">The maximum number of units to decrement the position by.</param>
+		void ScrollBack(int spaces)
+		{
+			int dest = position - spaces;
+			//Minimum is zero
+			if(dest < 0)
+			    dest = 0;
+			SetPosition(dest);
+		}
+		/// <summary>
+		/// Increments the position, automatically stopping at the start of the scrollbar. Scrolls down if vertical, right if horizontal
+		/// </summary>
+		/// <param name="spaces">The maximum number of units to decrement the position by.</param>
+		void ScrollForward(int spaces)
+		{
+			int barLength = GetBarLength();
+			//We might have buttons
+	    		if(barLength > 3)
+				barLength -= 2;
+			int dest = position + spaces;
+			
+			//Upper limit includes length of bar
+			if(dest + barLength >= Size)
+			    dest = Size - 1;
+			SetPosition(dest);
+		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="T:Terminal.Gui.Gui.ScrollBarView"/> class.
+		/// Initializes a scroll bar.
 		/// </summary>
 		/// <param name="rect">Frame for the scrollbar.</param>
 		/// <param name="size">The size that this scrollbar represents.</param>
-		/// <param name="position">The position within this scrollbar.</param>
+		/// <param name="position">The scrolled position of this scrollbar.</param>
 		/// <param name="isVertical">If set to <c>true</c> this is a vertical scrollbar, otherwize, the scrollbar is horizontal.</param>
 		public ScrollBarView (Rect rect, int size, int position, bool isVertical) : base (rect)
 		{
@@ -80,6 +113,13 @@ namespace Terminal.Gui {
 			this.position = position;
 			this.size = size;
 		}
+		public void GetHandleBounds(out int start, out int end)
+		{
+			int barLength = GetBarLength();
+			start = position * barLength / Size;
+			end = (position + barLength) * barLength / Size;
+		}
+
 
 		/// <summary>
 		/// Redraw the scrollbar
@@ -90,47 +130,48 @@ namespace Terminal.Gui {
 			Driver.SetAttribute (ColorScheme.Normal);
 
 			if (vertical) {
+				//Vertical scroller
 				if (region.Right < Bounds.Width - 1)
 					return;
 
 				var col = Bounds.Width - 1;
-				var bh = Bounds.Height;
+				var height = Bounds.Height;
 				Rune special;
 
-				if (bh < 4) {
-					var by1 = position * bh / Size;
-					var by2 = (position + bh) * bh / Size;
+				if (height < 4) {
+					var handleTop = position * height / Size;
+					var handleBottom = (position + height) * height / Size;
 
-					for (int y = 0; y < bh; y++) {
+					for (int y = 0; y < height; y++) {
 						Move (col, y);
-						if (y < by1 || y > by2)
+						if (y < handleTop || y > handleBottom)
 							special = Driver.Stipple;
 						else
 							special = Driver.Diamond;
 						Driver.AddRune(special);
 					}
 				} else {
-					bh -= 2;
-					var by1 = position * bh / Size;
-					var by2 = (position + bh) * bh / Size;
+					height -= 2;
+					var handleTop = position * height / Size;
+					var handleBottom = (position + height) * height / Size;
 
 					
 					Move (col, 0);
 					Driver.AddRune ('^');
 					Move (col, Bounds.Height - 1);
 					Driver.AddRune ('v');
-					for (int y = 0; y < bh; y++) {
+					for (int y = 0; y < height; y++) {
 						Move (col, y+1);
 
-						if (y < by1 || y > by2)
+						if (y < handleTop || y > handleBottom)
 							special = Driver.Stipple;
 						else {
-							if (by2 - by1 == 0)
+							if (handleBottom - handleTop == 0)
 								special = Driver.Diamond;
 							else {
-								if (y == by1)
+								if (y == handleTop)
 									special = Driver.TopTee;
-								else if (y == by2)
+								else if (y == handleBottom)
 									special = Driver.BottomTee;
 								else
 									special = Driver.VLine;
@@ -144,40 +185,40 @@ namespace Terminal.Gui {
 					return;
 
 				var row = Bounds.Height - 1;
-				var bw = Bounds.Width;
+				var width = Bounds.Width;
 				Rune special;
 
-				if (bw < 4) {
-					var bx1 = position * bw / Size;
-					var bx2 = (position + bw) * bw / Size;
+				if (width < 4) {
+					var handleLeft = position * width / Size;
+					var handleRight = (position + width) * width / Size;
 
-					for (int x = 0; x < bw; x++) {
+					for (int x = 0; x < width; x++) {
 						Move (0, x);
-						if (x < bx1 || x > bx2)
+						if (x < handleLeft || x > handleRight)
 							special = Driver.Stipple;
 						else
 							special = Driver.Diamond;
 						Driver.AddRune (special);
 					}
 				} else {
-					bw -= 2;
-					var bx1 = position * bw / Size;
-					var bx2 = (position + bw) * bw / Size;
+					width -= 2;
+					var handleLeft = position * width / Size;
+					var handleRight = (position + width) * width / Size;
 
 					Move (0, row);
 					Driver.AddRune ('<');
 
-					for (int x = 0; x < bw; x++) {
+					for (int x = 0; x < width; x++) {
 
-						if (x < bx1 || x > bx2) {
+						if (x < handleLeft || x > handleRight) {
 							special = Driver.Stipple;
 						} else {
-							if (bx2 - bx1 == 0)
+							if (handleRight - handleLeft == 0)
 								special = Driver.Diamond;
 							else {
-								if (x == bx1)
+								if (x == handleLeft)
 									special = Driver.LeftTee;
-								else if (x == bx2)
+								else if (x == handleRight)
 									special = Driver.RightTee;
 								else
 									special = Driver.HLine;
@@ -196,27 +237,34 @@ namespace Terminal.Gui {
 				return false;
 
 			int location = vertical ? me.Y : me.X;
-			int barsize = vertical ? Bounds.Height : Bounds.Width;
+			int barsize = vertical ? Bounds.Height : Bounds.Width; //Complete length, including the buttons
 
 			if (barsize < 4) {
 				// Handle scrollbars with no buttons
 				Console.WriteLine ("TODO at ScrollBarView2");
+				//Location clicked is somewhere along the scrollbar length
+				SetPosition((int) (((Size - 1) - barsize) * (1f * location / barsize)));
 			} else {
-				barsize -= 2;
 				// Handle scrollbars with arrow buttons
+				barsize -= 2;	//Get non-button length
 				var pos = Position;
 				if (location == 0) {
+					//Lower limit is 0
 					if (pos > 0)
 						SetPosition (pos - 1);
-				} else if (location == Bounds.Width - 1){
-					if (pos + 1 + barsize < Size)
+				} else if (location == barsize + 1){
+					//Upper limit is Size - 1
+					if (pos + barsize < Size - 1)
 						SetPosition (pos + 1);
 				} else {
-					Console.WriteLine ("TODO at ScrollBarView");
+					location--; //Account for bottom button
+					
+					//Location clicked is somewhere along the scrollbar length
+					SetPosition((int) (((Size - 1) - barsize) * (1f * location / barsize)));
 				}
 			}
 
-	    return true;
+		    return true;
 		}
 	}
 
@@ -254,16 +302,40 @@ namespace Terminal.Gui {
 			allowVertical = true;
 		}
 
-		Size contentSize => contentView.Frame.Size;
+		public ScrollView(Rect frame, Rect subframe) : base(frame)
+		{
+		    contentView = new View(subframe);
+		    vertical = new ScrollBarView(new Rect(frame.Width - 1, 0, 1, frame.Height), subframe.Height, 0, isVertical: true);
+		    vertical.ChangedPosition += delegate {
+			ContentOffset = new Point(ContentOffset.X, vertical.Position);
+		    };
+		    horizontal = new ScrollBarView(new Rect(0, frame.Height - 1, frame.Width - 1, 1), subframe.Width - 1, 0, isVertical: false);
+		    horizontal.ChangedPosition += delegate {
+			ContentOffset = new Point(horizontal.Position, ContentOffset.Y);
+		    };
+		    base.Add(contentView);
+		    CanFocus = true;
+		    allowHorizontal = true;
+		    allowVertical = true;
+		}
+
+	Size contentSize => contentView.Frame.Size;
 		Point contentOffset;
 		bool showHorizontalScrollIndicator;
 		bool showVerticalScrollIndicator;
-		bool allowHorizontal, allowVertical;
+		/// <summary>
+		/// If true, we allow horizontal scrolling with the keyboard
+		/// </summary>
+		bool allowHorizontal;
+		/// <summary>
+		/// If true, we allow vertical scrolling with the keyboard
+		/// </summary>
+		bool allowVertical;
 
 		/// <summary>
-		/// Represents the top left corner coordinate that is displayed by the scrollview
+		/// The position of the top left corner displayed by the scrollview. Used to implement scrolling.
 		/// </summary>
-		/// <value>The content offset.</value>
+		/// <value>The offset from the subview's top left corner.</value>
 		public Point ContentOffset {
 			get {
 				return contentOffset;
@@ -289,7 +361,7 @@ namespace Terminal.Gui {
 		/// <summary>
 		/// Gets or sets the visibility for the horizontal scroll indicator.
 		/// </summary>
-		/// <value><c>true</c> if show vertical scroll indicator; otherwise, <c>false</c>.</value>
+		/// <value><c>true</c> if the vertical scroll indicator is visible; <c>false</c> otherwise.</value>
 		public bool ShowHorizontalScrollIndicator {
 			get => showHorizontalScrollIndicator;
 			set {
@@ -308,8 +380,6 @@ namespace Terminal.Gui {
 		/// <summary>
 		///   Removes all widgets from this container.
 		/// </summary>
-		/// <remarks>
-		/// </remarks>
 		public override void RemoveAll()
 		{
 			contentView.RemoveAll();
@@ -318,7 +388,7 @@ namespace Terminal.Gui {
 		/// <summary>
 		/// /// Gets or sets the visibility for the vertical scroll indicator.
 		/// </summary>
-		/// <value><c>true</c> if show vertical scroll indicator; otherwise, <c>false</c>.</value>
+		/// <value><c>true</c> if the vertical scroll indicator is visible; <c>false</c> otherwise.</value>
 		public bool ShowVerticalScrollIndicator {
 			get => showVerticalScrollIndicator;
 			set {
@@ -348,7 +418,9 @@ namespace Terminal.Gui {
 			Driver.Clip = oldClip;
 			Driver.SetAttribute (ColorScheme.Normal);
 		}
-
+		/// <summary>
+		/// Moves the cursor to the top right corner if the view is empty. Otherwise calls base behavior.
+		/// </summary>
 		public override void PositionCursor()
 		{
 			if (Subviews.Count == 0)
@@ -358,9 +430,9 @@ namespace Terminal.Gui {
 		}
 
 		/// <summary>
-		/// Scrolls the view up.
+		/// Scrolls the view up. Does not check whether vertical scrolling is enabled.
 		/// </summary>
-		/// <returns><c>true</c>, if left was scrolled, <c>false</c> otherwise.</returns>
+		/// <returns><c>true</c> if the view was able to scroll; <c>false</c> if the view is already scrolled all the way.</returns>
 		/// <param name="lines">Number of lines to scroll.</param>
 		public bool ScrollUp (int lines)
 		{
@@ -372,9 +444,9 @@ namespace Terminal.Gui {
 		}
 
 		/// <summary>
-		/// Scrolls the view to the left
+		/// Scrolls the view left. Does not check whether horizontal scrolling is enabled.
 		/// </summary>
-		/// <returns><c>true</c>, if left was scrolled, <c>false</c> otherwise.</returns>
+		/// <returns><c>true</c> if the view was able to scroll; <c>false</c> if the view is already scrolled all the way.</returns>
 		/// <param name="cols">Number of columns to scroll by.</param>
 		public bool ScrollLeft (int cols)
 		{
@@ -386,9 +458,9 @@ namespace Terminal.Gui {
 		}
 
 		/// <summary>
-		/// Scrolls the view down.
+		/// Scrolls the view down. Does not check whether vertical scrolling is enabled.
 		/// </summary>
-		/// <returns><c>true</c>, if left was scrolled, <c>false</c> otherwise.</returns>
+		/// <returns><c>true</c> if the view was able to scroll; <c>false</c> if the view is already scrolled all the way.</returns>
 		/// <param name="lines">Number of lines to scroll.</param>
 		public bool ScrollDown (int lines)
 		{
@@ -400,9 +472,9 @@ namespace Terminal.Gui {
 		}
 
 		/// <summary>
-		/// Scrolls the view to the right.
+		/// Scrolls the view right. Does not check whether horizontal scrolling is enabled.
 		/// </summary>
-		/// <returns><c>true</c>, if right was scrolled, <c>false</c> otherwise.</returns>
+		/// <returns><c>true</c> if the view was able to scroll; <c>false</c> if the view is already scrolled all the way.</returns>
 		/// <param name="cols">Number of columns to scroll by.</param>
 		public bool ScrollRight (int cols)
 		{
@@ -413,7 +485,11 @@ namespace Terminal.Gui {
 			ContentOffset = new Point (nx, contentOffset.Y);
 			return true;
 		}
-
+		/// <summary>
+		/// Receives a key event. First passes the event to the focused view. If the event is not handled by then, this view implements scrolling functionality (if enabled) with the arrow keys and PageUp / PageDown.
+		/// </summary>
+		/// <returns><c>true</c>, if right was scrolled, <c>false</c> otherwise.</returns>
+		/// <param name="kb">The key event to handle.</param>
 		public override bool ProcessKey(KeyEvent kb)
 		{
 			if (base.ProcessKey (kb))
