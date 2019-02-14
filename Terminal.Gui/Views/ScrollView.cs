@@ -250,12 +250,15 @@ namespace Terminal.Gui {
 			};
 			base.Add (contentView);
 			CanFocus = true;
+		        allowHorizontal = true;
+			allowVertical = true;
 		}
 
 		Size contentSize => contentView.Frame.Size;
 		Point contentOffset;
 		bool showHorizontalScrollIndicator;
 		bool showVerticalScrollIndicator;
+		bool allowHorizontal, allowVertical;
 
 		/// <summary>
 		/// Represents the top left corner coordinate that is displayed by the scrollview
@@ -418,23 +421,35 @@ namespace Terminal.Gui {
 
 			switch (kb.Key) {
 			case Key.CursorUp:
+				if (allowVertical)
 				    return ScrollUp (1);
+				break;
 			case (Key) 'v' | Key.AltMask:
 			case Key.PageUp:
+				if (allowVertical)
 				    return ScrollUp (Bounds.Height);
+				break;
 
 			case Key.ControlV:
 			case Key.PageDown:
+				if(allowVertical)
 				    return ScrollDown (Bounds.Height);
+				break;
 
 			case Key.CursorDown:
+				if(allowVertical)
 				    return ScrollDown (1);
+				break;
 
 			case Key.CursorLeft:
+				if(allowHorizontal)
 				    return ScrollLeft (1);
+				break;
 
 			case Key.CursorRight:
+				if(allowHorizontal)
 				    return ScrollRight (1);
+				break;
 
 			}
 			return false;
