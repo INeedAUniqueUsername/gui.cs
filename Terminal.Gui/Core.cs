@@ -226,7 +226,7 @@ namespace Terminal.Gui {
 		/// Points to the current driver in use by the view, it is a convenience property
 		/// for simplifying the development of new views.
 		/// </summary>
-		public static ConsoleDriver Driver = Application.Driver;
+		public static ConsoleDriver Driver => Application.Driver;
 
 		static IList<View> empty = new List<View> (0).AsReadOnly ();
 		List<View> subviews;
