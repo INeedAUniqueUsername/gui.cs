@@ -216,7 +216,7 @@ namespace Terminal.Gui {
 				}
 			}
 
-			return true;
+	    return true;
 		}
 	}
 
@@ -236,7 +236,7 @@ namespace Terminal.Gui {
 	public class ScrollView : View {
 		View contentView;
 		ScrollBarView vertical, horizontal;
-
+		
 		public ScrollView (Rect frame) : base (frame)
 		{
 			contentView = new View (frame);
@@ -252,27 +252,10 @@ namespace Terminal.Gui {
 			CanFocus = true;
 		}
 
-		Size contentSize;
+		Size contentSize => contentView.Frame.Size;
 		Point contentOffset;
 		bool showHorizontalScrollIndicator;
 		bool showVerticalScrollIndicator;
-
-		/// <summary>
-		/// Represents the contents of the data shown inside the scrolview
-		/// </summary>
-		/// <value>The size of the content.</value>
-		public Size ContentSize {
-			get {
-				return contentSize;
-			}
-			set {
-				contentSize = value;
-				contentView.Frame = new Rect (contentOffset, value);
-				vertical.Size = contentSize.Height;
-				horizontal.Size = contentSize.Width;
-				SetNeedsDisplay ();
-			}
-		}
 
 		/// <summary>
 		/// Represents the top left corner coordinate that is displayed by the scrollview
@@ -435,23 +418,23 @@ namespace Terminal.Gui {
 
 			switch (kb.Key) {
 			case Key.CursorUp:
-				return ScrollUp (1);
+				    return ScrollUp (1);
 			case (Key) 'v' | Key.AltMask:
 			case Key.PageUp:
-				return ScrollUp (Bounds.Height);
+				    return ScrollUp (Bounds.Height);
 
 			case Key.ControlV:
 			case Key.PageDown:
-				return ScrollDown (Bounds.Height);
+				    return ScrollDown (Bounds.Height);
 
 			case Key.CursorDown:
-				return ScrollDown (1);
+				    return ScrollDown (1);
 
 			case Key.CursorLeft:
-				return ScrollLeft (1);
+				    return ScrollLeft (1);
 
 			case Key.CursorRight:
-				return ScrollRight (1);
+				    return ScrollRight (1);
 
 			}
 			return false;
