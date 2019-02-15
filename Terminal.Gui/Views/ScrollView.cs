@@ -66,6 +66,7 @@ namespace Terminal.Gui {
 			Position = newPos;
 			ChangedPosition?.Invoke ();
 		}
+		int GetScrollableSize() => Size - GetBarLength();
 		int GetBarLength()
 		{
 			return vertical ? Bounds.Height : Bounds.Width; //Complete length, including the buttons
@@ -113,11 +114,17 @@ namespace Terminal.Gui {
 			this.position = position;
 			this.size = size;
 		}
-		public void GetHandleBounds(out int start, out int end)
+		/// <summary>
+		/// Gets the start and end positions of the clickable handle relative to the open space area on the scrollbar
+		/// </summary>
+		/// <param name="start">The point where the handle starts (top side if vertical, left side if horizontal)</param>
+		/// <param name="end">The point where the handle starts (bottom side if vertical, right side if horizontal)</param>
+		public void GetHandleBounds(out int start, out int end, out int length)
 		{
 			int barLength = GetBarLength();
 			start = position * barLength / Size;
 			end = (position + barLength) * barLength / Size;
+			length = end - start;
 		}
 
 
@@ -237,31 +244,77 @@ namespace Terminal.Gui {
 				return false;
 
 			int location = vertical ? me.Y : me.X;
-			int barsize = vertical ? Bounds.Height : Bounds.Width; //Complete length, including the buttons
+			int barLength = GetBarLength();
 
-			if (barsize < 4) {
+			if (barLength < 4) {
 				// Handle scrollbars with no buttons
 				Console.WriteLine ("TODO at ScrollBarView2");
 				//Location clicked is somewhere along the scrollbar length
-				SetPosition((int) (((Size - 1) - barsize) * (1f * location / barsize)));
+				
+				//Old implementation ignored handle bounds
+				//SetPosition((int) (((Size - 1) - barsize) * (1f * location / barsize)));
+				GetHandleBounds(out int start, out int end, out int length);
+				if(location < start || location > end)
+				{
+					SetPosition((int) (Size * 1f * (location - 2) / barLength));
+				}
+				/*
+				if(location - 1 < start)
+					SetPosition((int) (Size * 1f * location / barLength));
+				else if(location + 1 > end)
+					SetPosition((int) (Size * 1f * (location + length/2) / barLength));
+				*/
+				/*
+				if (location < start) {
+					int delta = (int)(Size * ((double)(start - location) / barLength));
+					ScrollBack(delta);
+				} else if (location > end) {
+					int delta = (int)(Size * ((double)(location - end) / barLength));
+					ScrollForward(delta);
+				} else {
+					//TODO: Implement dragging
+				}
+				*/
 			} else {
 				// Handle scrollbars with arrow buttons
-				barsize -= 2;	//Get non-button length
+				int spaceSize = barLength - 2;
 				var pos = Position;
 				if (location == 0) {
 					//Lower limit is 0
 					if (pos > 0)
 						SetPosition (pos - 1);
-				} else if (location == barsize + 1){
+				} else if (location == barLength + 1){
 					//Upper limit is Size - 1
-					if (pos + barsize < Size - 1)
+					if (pos + barLength < Size - 1)
 						SetPosition (pos + 1);
 				} else {
-					location--; //Account for bottom button
-					
 					//Location clicked is somewhere along the scrollbar length
-					SetPosition((int) (((Size - 1) - barsize) * (1f * location / barsize)));
-				}
+					//Old implementation ignored handle
+					//SetPosition((int) (((Size - 1) - barsize) * (1f * location / barsize)));
+
+					GetHandleBounds(out int start, out int end, out int length);
+					if(location < start || location > end)
+					{
+						SetPosition((int) (Size * 1f * (location - 2) / barLength));
+					}
+					/*
+					if(location - 1 < start)
+						SetPosition((int) (Size * 1f * location / barLength));
+					else if(location + 1 > end)
+						SetPosition((int) (Size * 1f * location + length/2) / barLength);
+					*/
+					/*
+					if (location - 1 < start) {
+						int delta = (int)(Size * ((double)(1 + start - location) / barLength));
+						ScrollBack(delta);
+					} else if (location + 1 > end) {
+						int delta = (int)(Size * ((double)(1 + location - end) / barLength));
+						ScrollForward(delta);
+					} else {
+						//TODO: Implement dragging
+					}
+					*/
+		}
 			}
 
 		    return true;
