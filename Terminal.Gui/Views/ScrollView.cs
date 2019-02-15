@@ -66,40 +66,6 @@ namespace Terminal.Gui {
 			Position = newPos;
 			ChangedPosition?.Invoke ();
 		}
-		int GetScrollableSize() => Size - GetBarLength();
-		int GetBarLength()
-		{
-			return vertical ? Bounds.Height : Bounds.Width; //Complete length, including the buttons
-		}
-		/// <summary>
-		/// Decrements the position, automatically stopping at the start of the scrollbar. Scrolls up if vertical, left if horizontal
-		/// </summary>
-		/// <param name="spaces">The maximum number of units to decrement the position by.</param>
-		void ScrollBack(int spaces)
-		{
-			int dest = position - spaces;
-			//Minimum is zero
-			if(dest < 0)
-			    dest = 0;
-			SetPosition(dest);
-		}
-		/// <summary>
-		/// Increments the position, automatically stopping at the start of the scrollbar. Scrolls down if vertical, right if horizontal
-		/// </summary>
-		/// <param name="spaces">The maximum number of units to decrement the position by.</param>
-		void ScrollForward(int spaces)
-		{
-			int barLength = GetBarLength();
-			//We might have buttons
-	    		if(barLength > 3)
-				barLength -= 2;
-			int dest = position + spaces;
-			
-			//Upper limit includes length of bar
-			if(dest + barLength >= Size)
-			    dest = Size - 1;
-			SetPosition(dest);
-		}
 
 		/// <summary>
 		/// Initializes a scroll bar.
@@ -126,7 +92,52 @@ namespace Terminal.Gui {
 			end = (position + barLength) * barLength / Size;
 			length = end - start;
 		}
-
+				int GetScrollableSize() => Size - GetBarLength();
+		int GetBarLength()
+		{
+			return vertical ? Bounds.Height : Bounds.Width; //Complete length, including the buttons
+		}
+		/// <summary>
+		/// Decrements the position, automatically stopping at the start of the scrollbar. Scrolls up if vertical, left if horizontal
+		/// </summary>
+		/// <param name="spaces">The maximum number of units to decrement the position by.</param>
+		/// <returns><c>true</c> if the scroll bar was able to scroll back; <c>false</c> otherwise</returns>
+		public bool ScrollBack(int spaces)
+		{
+			int dest = position - spaces;
+			//Minimum is zero
+			if(dest < 0)
+				dest = 0;
+			if(position != dest)
+			{
+				SetPosition(dest);
+				return true;
+			}
+			return false;
+		}
+		/// <summary>
+		/// Increments the position, automatically stopping at the start of the scrollbar. Scrolls down if vertical, right if horizontal
+		/// </summary>
+		/// <param name="spaces">The maximum number of units to decrement the position by.</param>
+		/// <returns><c>true</c> if the scroll bar was able to scroll back; <c>false</c> otherwise</returns>
+		public bool ScrollForward(int spaces)
+		{
+			int barLength = GetBarLength();
+			//We might have buttons
+	    		if(barLength > 3)
+				barLength -= 2;
+			int dest = position + spaces;
+			
+			//Upper limit includes length of bar
+			if(dest + barLength >= Size)
+				dest = Size - 1;
+			if(position != dest)
+			{
+				SetPosition(dest);
+				return true;
+			}
+			return false;
+		}
 
 		/// <summary>
 		/// Redraw the scrollbar

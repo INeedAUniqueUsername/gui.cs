@@ -30,6 +30,7 @@ namespace Terminal.Gui {
 		Rune hot_key;
 		int hot_pos = -1;
 		bool is_default;
+		public bool Enabled { get; set; }
 
 		/// <summary>
 		/// Gets or sets a value indicating whether this <see cref="T:Terminal.Gui.Button"/> is the default action to activate on return on a dialog.
@@ -72,6 +73,7 @@ namespace Terminal.Gui {
 			Width = w;
 			Height = 1;
 			Frame = new Rect (0, 0, w, 1);
+			Enabled = true;
 		}
 
 		/// <summary>
@@ -86,6 +88,7 @@ namespace Terminal.Gui {
 		/// <param name="y">Y position where the button will be shown.</param>
 		/// <param name="text">The button's text</param>
 		public Button (int x, int y, ustring text) : this (x, y, text, false) { }
+		public Button (int x, int y, ustring text, Action Clicked) : this(x, y, text, false) { this.Clicked = Clicked; }
 
 		/// <summary>
 		///   The text displayed by this widget.
@@ -142,6 +145,8 @@ namespace Terminal.Gui {
 
 			this.IsDefault = is_default;
 			Text = text;
+
+			Enabled = true;
 		}
 
 		public override void Redraw (Rect region)
@@ -166,9 +171,7 @@ namespace Terminal.Gui {
 		{
 			if (Char.ToUpper ((char)key.KeyValue) == hot_key) {
 				this.SuperView.SetFocus (this);
-				if (Clicked != null)
-					Clicked ();
-				return true;
+				return Click();
 			}
 			return false;
 		}
@@ -184,9 +187,7 @@ namespace Terminal.Gui {
 		public override bool ProcessColdKey (KeyEvent kb)
 		{
 			if (IsDefault && kb.KeyValue == '\n') {
-				if (Clicked != null)
-					Clicked ();
-				return true;
+				return Click();
 			}
 			return CheckKey (kb);
 		}
@@ -195,9 +196,7 @@ namespace Terminal.Gui {
 		{
 			var c = kb.KeyValue;
 			if (c == '\n' || c == ' ' || Rune.ToUpper ((Rune)c) == hot_key) {
-				if (Clicked != null)
-					Clicked ();
-				return true;
+				return Click();
 			}
 			return base.ProcessKey (kb);
 		}
@@ -207,12 +206,14 @@ namespace Terminal.Gui {
 			if (me.Flags == MouseFlags.Button1Clicked) {
 				SuperView.SetFocus (this);
 				SetNeedsDisplay ();
-
-				if (Clicked != null)
-					Clicked ();
-				return true;
+				return Click();
 			}
 			return false;
+		}
+		private bool Click() {
+		    if(Enabled)
+			Clicked?.Invoke();
+		    return Enabled;
 		}
 	}
 }
