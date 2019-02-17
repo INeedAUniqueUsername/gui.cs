@@ -71,7 +71,7 @@ namespace Terminal.Gui {
 		/// Initializes a scroll bar.
 		/// </summary>
 		/// <param name="rect">Frame for the scrollbar.</param>
-		/// <param name="size">The size that this scrollbar represents.</param>
+		/// <param name="size">The size of the space represented by this scrollbar.</param>
 		/// <param name="position">The scrolled position of this scrollbar.</param>
 		/// <param name="isVertical">If set to <c>true</c> this is a vertical scrollbar, otherwize, the scrollbar is horizontal.</param>
 		public ScrollBarView (Rect rect, int size, int position, bool isVertical) : base (rect)
@@ -259,15 +259,17 @@ namespace Terminal.Gui {
 
 			if (barLength < 4) {
 				// Handle scrollbars with no buttons
-				Console.WriteLine ("TODO at ScrollBarView2");
+				//Console.WriteLine ("TODO at ScrollBarView2");
 				//Location clicked is somewhere along the scrollbar length
 				
 				//Old implementation ignored handle bounds
 				//SetPosition((int) (((Size - 1) - barsize) * (1f * location / barsize)));
-				GetHandleBounds(out int start, out int end, out int length);
-				if(location < start || location > end)
+				GetHandleBounds(out int start, out int end, out int handleLength);
+				if(location < start)
 				{
-					SetPosition((int) (Size * 1f * (location - 2) / barLength));
+					ScrollBack(barLength/2);
+				} else if(location > end) { 
+					ScrollForward(barLength/2);
 				}
 				/*
 				if(location - 1 < start)
@@ -303,10 +305,12 @@ namespace Terminal.Gui {
 					//Old implementation ignored handle
 					//SetPosition((int) (((Size - 1) - barsize) * (1f * location / barsize)));
 
-					GetHandleBounds(out int start, out int end, out int length);
-					if(location < start || location > end)
+					GetHandleBounds(out int start, out int end, out int handleLength);
+					if(location < start)
 					{
-						SetPosition((int) (Size * 1f * (location - 2) / barLength));
+						ScrollBack(barLength/2);
+					} else if(location > end) { 
+						ScrollForward(barLength/2);
 					}
 					/*
 					if(location - 1 < start)
@@ -383,7 +387,7 @@ namespace Terminal.Gui {
 		    allowVertical = true;
 		}
 
-	Size contentSize => contentView.Frame.Size;
+		Size contentSize => contentView.Frame.Size;
 		Point contentOffset;
 		bool showHorizontalScrollIndicator;
 		bool showVerticalScrollIndicator;
