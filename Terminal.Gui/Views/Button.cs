@@ -169,15 +169,20 @@ namespace Terminal.Gui {
 
 		bool CheckKey (KeyEvent key)
 		{
+	    		if(!Enabled)
+				return false;
 			if (Char.ToUpper ((char)key.KeyValue) == hot_key) {
 				this.SuperView.SetFocus (this);
-				return Click();
+				Click();
+				return true;
 			}
 			return false;
 		}
 
 		public override bool ProcessHotKey (KeyEvent kb)
 		{
+	    		if(!Enabled)
+				return false;
 			if (kb.IsAlt)
 				return CheckKey (kb);
 
@@ -186,34 +191,41 @@ namespace Terminal.Gui {
 
 		public override bool ProcessColdKey (KeyEvent kb)
 		{
+			if(!Enabled)
+				return false;
 			if (IsDefault && kb.KeyValue == '\n') {
-				return Click();
+				Click();
+				return true;
 			}
 			return CheckKey (kb);
 		}
 
 		public override bool ProcessKey (KeyEvent kb)
 		{
+	    		if(!Enabled)
+				return false;
 			var c = kb.KeyValue;
 			if (c == '\n' || c == ' ' || Rune.ToUpper ((Rune)c) == hot_key) {
-				return Click();
+				Click();
+				return true;
 			}
 			return base.ProcessKey (kb);
 		}
 
 		public override bool MouseEvent(MouseEvent me)
 		{
+	    		if(!Enabled)
+				return false;
 			if (me.Flags == MouseFlags.Button1Clicked) {
 				SuperView.SetFocus (this);
 				SetNeedsDisplay ();
-				return Click();
+				Click();
+				return true;
 			}
 			return false;
 		}
-		private bool Click() {
-		    if(Enabled)
+		private void Click() {
 			Clicked?.Invoke();
-		    return Enabled;
 		}
 	}
 }
