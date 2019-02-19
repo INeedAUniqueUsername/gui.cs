@@ -413,6 +413,7 @@ namespace Terminal.Gui {
 				contentView.Frame = new Rect (contentOffset, contentSize);
 				vertical.Position = Math.Max (0, -contentOffset.Y);
 				horizontal.Position = Math.Max (0, -contentOffset.X);
+				Scrolled.Invoke(this);
 				SetNeedsDisplay ();
 			}
 		}
