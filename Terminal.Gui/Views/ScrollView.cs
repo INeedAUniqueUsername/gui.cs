@@ -296,7 +296,7 @@ namespace Terminal.Gui {
 					//Lower limit is 0
 					if (pos > 0)
 						SetPosition (pos - 1);
-				} else if (location == barLength + 1){
+				} else if (location == barLength - 1){
 					//Upper limit is Size - 1
 					if (pos + barLength < Size - 1)
 						SetPosition (pos + 1);
