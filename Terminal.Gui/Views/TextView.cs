@@ -115,8 +115,9 @@ namespace Terminal.Gui {
 			foreach (var line in lines) 
 			{
 				sb.Append (ustring.Make(line));
-				sb.AppendLine ();
+				sb.Append("\n");
 			}
+			sb.Length--;
 			return sb.ToString ();
 		}
 
